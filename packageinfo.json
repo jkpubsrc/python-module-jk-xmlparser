@@ -1,0 +1,55 @@
+﻿{
+	"language": "python3",
+	"name": "jk_xmlparser",
+	"version": "0.2019.4.10",
+	"meta": {
+		"description": "This python module parses XML (and HTML) files.",
+		"keywords": [
+			"parsing"
+		],
+		"license": "Apache 2.0",
+		"development_status": "beta",
+		"authors": [
+			{
+				"name": "Jürgen Knauth",
+				"email": "pubsrc@binary-overflow.de"
+			}
+		],
+		"wiki": {
+			"documentation_page": "DevDocs:jk_xmlparser",
+			"issues_page": "jk_xmlparser"
+		}
+	},
+	"repositories": [
+		{
+			"type": "github",
+			"user": "jkpubsrc",
+			"project": "python-module-jk-xmlparser",
+			"devon_publish": true
+		},
+		{
+			"type": "pypy",
+			"project": "jk_xmlparser",
+			"devon_publish": true
+		}
+	],
+	"source": {
+		"packages": [
+			"jk_xmlparser"
+		],
+		"extra_data_files": [
+			"tokenize_xml.json"
+		],
+		"extra_binary_files": [
+		]
+	},
+	"requirements": {
+		"python_packages": [
+			"jk_simplexml",
+			"jk_tokenizingparsing"
+		],
+		"python_packages_dev": [
+		]
+	}
+}
+

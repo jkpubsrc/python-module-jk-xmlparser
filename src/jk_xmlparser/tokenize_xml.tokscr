@@ -1,0 +1,205 @@
+tokenizer {
+
+
+
+	meta {
+
+		formatVersion	= "1"
+
+	}
+
+
+
+	general {
+
+		#	xml		xml header fragment begin (<?)
+		#	xmlf	xml header fragment end (<?)
+		#	a		tag attribute key
+		#	b		begin tag fragment (<)
+		#	c		content
+		#	d		delimiter (=)
+		#	e		begin tag fragment (</)
+		#	f		end tag fragment (>)
+		#	s		tag attribute value: string
+		#	w		tag attribute key or value: word
+		#	xb		comment begin
+		#	xc		comment content
+		#	xf		comment end
+		#	eos		eos
+		tokens			= b, e, f, t, a, d, w, s, c, xb, xc, xf, eos, xml, xmlf
+
+	}
+
+
+
+	errors {
+		errUnexpectedCharacter	= T0001, "Unexpected character!"
+		errEOSInBeginTag		= T0002, "Unexpected EOS in begin tag!"
+		errEOSInEndTag			= T0003, "Unexpected EOS in end tag!"
+		errEOSInSpecialTag		= T0004, "Unexpected EOS in special tag!"
+		errInvESCSeq			= T0005, "Invalid escape sequence!"
+		errEOSInStr				= T0006, "Unexpected EOS in string!"
+		errEOSInComment			= T0007, "EOS in comment!"
+	}
+
+
+
+	statemachine {
+
+
+
+		CONTENT {
+
+			patterns {
+				XMLHEAD
+				COMMENT
+				ENDTAG
+				BEGINTAG
+
+				other		=>	appendElementToBuffer(), advance()
+				eos			=>	emitBuffer("c"), emitGenerate("eos")
+			}
+
+		}
+
+
+
+		XMLHEAD {
+
+			condition {
+				# only accept if a "<" is immediately followed by "?" followed by "xml"
+				r"<\\?xml"				=>	emitBufferIfNotEmpty("c"), emitElement("xml"), clearBuffer(), advance()
+			}
+
+			patterns {
+				any"\t\r\n "			=>	advance()
+				r"\\?>"					=>	emitElement("xmlf"), advance(), return()
+				INSTRING2
+				r"[\\w-]+"				=>	emitElement("w"), advance()
+				"="						=>	emitElement("d"), advance()
+
+				#other					=>	error(errUnexpectedCharacter, 2)
+				other					=>	emitElement("d"), advance()
+				eos						=>	error(errEOSInSpecialTag, 3)
+			}
+
+		}
+
+
+
+		COMMENT {
+
+			condition {
+				"<!--"				=>	emitBufferIfNotEmpty("c"), clearBuffer(), emitElement("xb"), advance()
+			}
+
+			patterns {
+				"-->"				=>	emitBuffer("xc"), clearBuffer(), emitElement("xf"), advance(), return()
+
+				other				=>	appendElementToBuffer(), advance()
+				eos					=>	error(errEOSInComment, 1)
+			}
+
+		}
+
+
+
+		BEGINTAG {
+
+			condition {
+				# only accept if a "<" is immediately followed by a letter
+				r"<(?=\\w)"			=>	emitBufferIfNotEmpty("c"), emitElement("b"), clearBuffer(), advance()
+			}
+
+			patterns {
+				any"\t\r\n "			=>	advance()
+				"/>"					=>	emitElement("f"), advance(), return()
+				">"						=>	emitElement("f"), advance(), return()
+				INSTRING2
+				r"[\\w-]+"				=>	emitElement("w"), advance()
+				any"="					=>	emitElement("d"), advance()
+
+				#other					=>	error(errUnexpectedCharacter, 2)
+				other					=>	emitElement("d"), advance()
+				eos						=>	error(errEOSInBeginTag, 4)
+			}
+
+		}
+
+
+
+		ENDTAG {
+
+			condition {
+				# only accept if a "</" is immediately followed by a letter
+				r"</(?=\\w)"		=>	emitBuffer("c"), emitElement("e"), clearBuffer(), advance()
+			}
+
+			patterns {
+				any"\t\r\n "		=>	advance()
+				"/>"				=>	emitElement("f"), advance(), return()
+
+				other				=>	appendElementToBuffer(), advance()
+				eos					=>	error(errEOSInBeginTag, 5)
+			}
+
+		}
+
+
+
+		INSTRING2 {
+
+			condition {
+				"\""		=>	clearBuffer(), advance()
+			}
+
+			patterns {
+				r"\"+"		=>	emitBuffer("s"), advance(), clearBuffer(), return()
+				INSTRINGMASKED
+				other		=>	appendElementToBuffer(), advance()
+				eos			=>	error(errEOSInStr, 7)
+			}
+
+		}
+
+
+
+		INSTRINGMASKED {
+
+			condition {
+				"\\"		=>	advance()
+			}
+
+			patterns {
+				r"u[0-9a-fA-F]{4}"		=>	appendElementToBuffer(convert4HexToUnicode), advance(), return()
+				"\\"					=>	appendTextToBuffer("\\"), advance(), return()
+				"n"						=>	appendTextToBuffer("\n"), advance(), return()
+				"r"						=>	appendTextToBuffer("\r"), advance(), return()
+				"t"						=>	appendTextToBuffer("\t"), advance(), return()
+				"f"						=>	appendTextToBuffer("\f"), advance(), return()
+				"b"						=>	appendTextToBuffer("\b"), advance(), return()
+				"/"						=>	appendTextToBuffer("/"), advance(), return()
+				"'"						=>	appendTextToBuffer("'"), advance(), return()
+				"\""					=>	appendTextToBuffer("\""), advance(), return()
+				other		=>	error(errInvESCSeq, 8)
+				eos			=>	error(errEOSInStr, 9)
+			}
+
+		}
+
+
+
+	}
+
+
+
+}
+
+
+
+
+
+
+
+
+
