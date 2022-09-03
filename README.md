@@ -11,7 +11,7 @@ Please be aware that this parser has some unique features like leaving entities 
 Information about this module can be found here:
 
 * [github.com](https://github.com/jkpubsrc/python-module-jk-xmlparser)
-* [pypi.python.org](https://pypi.python.org/pypi/jk_xmlparser)
+* [pypi.org](https://pypi.org/project/jk-xmlparser/)
 
 History
 -------
